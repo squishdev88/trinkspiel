@@ -20,6 +20,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:easy_localization/easy_localization.dart';
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await EasyLocalization.ensureInitialized();
@@ -63,8 +64,7 @@ theme: ThemeData(
 
       home: SplashScreen(
   onDone: () {
-    Navigator.pushReplacement(
-      context,
+    navigatorKey.currentState!.pushReplacement(
       MaterialPageRoute(builder: (_) => const HomeScreen()),
     );
   },
@@ -204,9 +204,9 @@ class _HomeScreenState extends State<HomeScreen>
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(
-          color: isActive
-              ? Colors.amber.withOpacity(0.2)
-              : Colors.black.withOpacity(0.3),
+              color: isActive
+    ? Colors.amber.withOpacity(0.2)
+    : Colors.black.withOpacity(0.3),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: isActive ? Colors.amber : Colors.white54,
@@ -228,6 +228,9 @@ class _HomeScreenState extends State<HomeScreen>
 // SPIELER-EINGABE
 // ===========================================================================
 
+// ===========================================================================
+// SPIELER-EINGABE – NEU DESIGNED
+// ===========================================================================
 class PlayerSetupScreen extends StatefulWidget {
   const PlayerSetupScreen({super.key});
 
@@ -235,24 +238,39 @@ class PlayerSetupScreen extends StatefulWidget {
   State<PlayerSetupScreen> createState() => _PlayerSetupScreenState();
 }
 
-class _PlayerSetupScreenState extends State<PlayerSetupScreen> {
+class _PlayerSetupScreenState extends State<PlayerSetupScreen>
+    with TickerProviderStateMixin {
   final List<TextEditingController> _playerControllers = [
     TextEditingController(text: 'Spieler 1'),
     TextEditingController(text: 'Spieler 2'),
   ];
+
+  late final AnimationController _listAnimController;
+
+  @override
+  void initState() {
+    super.initState();
+    _listAnimController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 400),
+    )..forward();
+  }
 
   @override
   void dispose() {
     for (final c in _playerControllers) {
       c.dispose();
     }
+    _listAnimController.dispose();
     super.dispose();
   }
 
   void _addPlayerField() {
     setState(() {
       _playerControllers.add(
-        TextEditingController(text: 'Spieler ${_playerControllers.length + 1}'),
+        TextEditingController(
+          text: 'Spieler ${_playerControllers.length + 1}',
+        ),
       );
     });
   }
@@ -288,92 +306,189 @@ class _PlayerSetupScreenState extends State<PlayerSetupScreen> {
     }
 
     Navigator.of(context).pushReplacement(
-      PageRouteBuilder(
-        transitionDuration: const Duration(milliseconds: 600),
-        pageBuilder: (_, animation, __) {
-          return ScaleTransition(
-            scale: CurvedAnimation(
-              parent: animation,
-              curve: Curves.easeOut,
-            ),
-            child: CircleGameScreen(players: players),
-          );
-        },
+      MaterialPageRoute(
+        builder: (_) => CircleGameScreen(players: players),
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final titleStyle = GoogleFonts.cinzel(
+    final titleStyle = TextStyle(
+      fontFamily: 'KingsCupFont',
       fontSize: 26,
       fontWeight: FontWeight.bold,
+      letterSpacing: 2,
     );
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Spieler eintragen'),
+        title: const Text('Kings Cup – Spieler'),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            Text(
-              'Wer spielt mit?',
-              style: titleStyle,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Fügt eure Namen hinzu. Später können hier noch weitere '
-              'Einstellungen hinzukommen (Schwierigkeit, Packs, usw.).',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.7),
+      body: Stack(
+        children: [
+          // leichter Hintergrundverlauf
+          Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Color(0xFF0B0B18),
+                  Color(0xFF17152A),
+                ],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
               ),
             ),
-            const SizedBox(height: 16),
-            Expanded(
-              child: ListView.builder(
-                itemCount: _playerControllers.length,
-                itemBuilder: (context, index) {
-                  return Row(
+          ),
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                children: [
+                  const SizedBox(height: 8),
+                  Text('WER SPIELT MIT?', style: titleStyle),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Fügt eure Namen hinzu.\n'
+                    'Ihr könnt aber auch einfach das Handy herumgeben.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.75),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Expanded(
+                    child: AnimatedBuilder(
+                      animation: _listAnimController,
+                      builder: (context, child) {
+                        return ListView.builder(
+                          itemCount: _playerControllers.length,
+                          itemBuilder: (context, index) {
+                            final animation = CurvedAnimation(
+                              parent: _listAnimController,
+                              curve: Interval(
+                                0.0,
+                                1.0,
+                                // alle Elemente kriegen dieselbe Kurve; reicht hier
+                              ),
+                            );
+                            return FadeTransition(
+                              opacity: animation,
+                              child: SlideTransition(
+                                position: Tween<Offset>(
+                                  begin: const Offset(0, 0.1),
+                                  end: Offset.zero,
+                                ).animate(animation),
+                                child: _buildPlayerCard(index),
+                              ),
+                            );
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
                     children: [
                       Expanded(
-                        child: TextField(
-                          controller: _playerControllers[index],
-                          decoration: InputDecoration(
-                            labelText: 'Spieler ${index + 1}',
-                            filled: true,
-                            fillColor: Colors.white.withValues(alpha: 0.05),
-                            border: const OutlineInputBorder(),
+                        child: OutlinedButton.icon(
+                          onPressed: _addPlayerField,
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.amber,
+                            side:
+                                const BorderSide(color: Colors.amber, width: 1),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(24),
+                            ),
                           ),
+                          icon: const Icon(Icons.add),
+                          label: const Text('Spieler hinzufügen'),
                         ),
                       ),
-                      IconButton(
-                        onPressed: () => _removePlayerField(index),
-                        icon: const Icon(Icons.remove_circle_outline),
-                      ),
                     ],
-                  );
-                },
+                  ),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: _startGame,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.amber,
+                        foregroundColor: Colors.black,
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 16,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(28),
+                        ),
+                      ),
+                      child: const Text(
+                        'KINGS CUP STARTEN',
+                        style: TextStyle(
+                          letterSpacing: 1.5,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: _addPlayerField,
-                    icon: const Icon(Icons.add),
-                    label: const Text('Spieler hinzufügen'),
-                  ),
-                ),
-              ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPlayerCard(int index) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6.0),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(18),
+          gradient: const LinearGradient(
+            colors: [
+              Color(0xFF201C35),
+              Color(0xFF2B2142),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          border: Border.all(
+            color: Colors.white24,
+            width: 1,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.4),
+              blurRadius: 12,
+              offset: const Offset(0, 6),
             ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: _startGame,
-              child: const Text('Circle starten'),
+          ],
+        ),
+        child: Row(
+          children: [
+            const SizedBox(width: 12),
+            Text(
+              '#${index + 1}',
+              style: const TextStyle(
+                color: Colors.amber,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: TextField(
+                controller: _playerControllers[index],
+                decoration: const InputDecoration(
+                  border: InputBorder.none,
+                  hintText: 'Spielername',
+                ),
+              ),
+            ),
+            IconButton(
+              onPressed: () => _removePlayerField(index),
+              icon: const Icon(Icons.remove_circle_outline),
             ),
           ],
         ),
@@ -381,6 +496,7 @@ class _PlayerSetupScreenState extends State<PlayerSetupScreen> {
     );
   }
 }
+
 
 // ===========================================================================
 // DATENMODELL: KARTEN & FRAGEN
@@ -605,129 +721,60 @@ class PlayingCardView extends StatelessWidget {
   final GameCard card;
   final bool faceDown;
 
+  // NEU:
+  final double width;
+  final double height;
+
   const PlayingCardView({
     super.key,
     required this.card,
     required this.faceDown,
+    this.width = 100,
+    this.height = 140,
   });
 
   @override
   Widget build(BuildContext context) {
-    if (faceDown) {
-      return Container(
-        width: 120,
-        height: 170,
-        decoration: BoxDecoration(
-          color: Colors.blue.shade700,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.3),
-              blurRadius: 8,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Center(
-          child: Text(
-            'Kings\nCup',
-            textAlign: TextAlign.center,
-            style: GoogleFonts.cinzel(
-              color: Colors.white,
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 1.5,
-            ),
-          ),
-        ),
-      );
-    }
-
-    final rank = card.rank.shortLabel;
-    final suitSymbol = card.suit.symbol;
-    final suitColor = card.suit.color;
-
     return Container(
-      width: 120,
-      height: 170,
+      width: width,
+      height: height,
       decoration: BoxDecoration(
-        color: const Color(0xFFFAF7F0),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: suitColor, width: 2),
+        color: faceDown ? Colors.blue : Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.black, width: 2),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.3),
-            blurRadius: 8,
+            color: Colors.black.withOpacity(0.4),
+            blurRadius: 10,
             offset: const Offset(0, 4),
           ),
         ],
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: Stack(
-          children: [
-            Align(
-              alignment: Alignment.topLeft,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    rank,
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: suitColor,
-                    ),
-                  ),
-                  Text(
-                    suitSymbol,
-                    style: TextStyle(
-                      fontSize: 18,
-                      color: suitColor,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Align(
-              alignment: Alignment.bottomRight,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    rank,
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: suitColor,
-                    ),
-                  ),
-                  Text(
-                    suitSymbol,
-                    style: TextStyle(
-                      fontSize: 18,
-                      color: suitColor,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Center(
+      child: faceDown
+          ? const Center(
               child: Text(
-                suitSymbol,
+                'KC',
                 style: TextStyle(
-                  fontSize: 48,
-                  color: suitColor,
+                  fontSize: 22,
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            )
+          : Center(
+              child: Text(
+                '${card.rank.shortLabel}\n${card.suit.symbol}',
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
             ),
-          ],
-        ),
-      ),
     );
   }
 }
+
 
 /// Karte, die angetippt werden kann.
 /// Wichtig: Hier wird geprüft, WO auf der Karte getippt wurde.
@@ -771,6 +818,9 @@ class TappableCard extends StatelessWidget {
 // SPIEL-SCREEN (CIRCLE)
 // ===========================================================================
 
+// ===========================================================================
+// KINGS CUP – SPIELSCREEN (Cup + Kartenkreis)
+// ===========================================================================
 class CircleGameScreen extends StatefulWidget {
   final List<String> players;
 
@@ -791,13 +841,11 @@ class _CircleGameScreenState extends State<CircleGameScreen>
 
   bool _isAwaitingTap = false;
   bool? _tapSuccess;
-  int _successCount = 0; // steuert Schwierigkeit
+  int _successCount = 0;
   String? _currentQuestionText;
 
-  late final AnimationController _zoomController;
-  late final Animation<double> _zoomAnimation;
-
   late final AnimationController _cardFloatController;
+  late final AnimationController _drawController;
 
   String get _currentPlayerName => widget.players[_currentPlayerIndex];
 
@@ -806,26 +854,21 @@ class _CircleGameScreenState extends State<CircleGameScreen>
     super.initState();
     _deck = createFullCircleDeck();
 
-    _zoomController = AnimationController(
+    _cardFloatController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 800),
     );
-    _zoomAnimation = CurvedAnimation(
-      parent: _zoomController,
-      curve: Curves.easeOut,
-    );
-    _zoomController.forward();
 
-    _cardFloatController = AnimationController(
+    _drawController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1200),
+      duration: const Duration(milliseconds: 450),
     );
   }
 
   @override
   void dispose() {
-    _zoomController.dispose();
     _cardFloatController.dispose();
+    _drawController.dispose();
     super.dispose();
   }
 
@@ -858,40 +901,34 @@ class _CircleGameScreenState extends State<CircleGameScreen>
         _drawnKings++;
       }
 
+      _drawController
+        ..reset()
+        ..forward();
       _cardFloatController
         ..reset()
         ..repeat(reverse: true);
     });
   }
 
-  /// Hier passiert die eigentliche Skill-Logik:
-  ///
-  /// [relativeY] ist zwischen 0 (oben) und 1 (unten).
-  /// Wir definieren eine "Mitte-Zone" rund um 0.5.
-  ///
-  /// Am Anfang ist diese Zone groß (leicht),
-  /// wird aber kleiner, je mehr Erfolg man hatte.
-  void _handleTapOnCard(double relativeY) {
+  void _handleTapOnMovingCard() {
     if (!_isAwaitingTap || _currentCard == null) return;
 
-    // Basis-Toleranz: Mitte darf +/- 0.22 sein => Mitte-Zone ~44 % der Karte.
-    // Schwierigkeitssteigerung: pro Erfolg wird die Zone kleiner,
-    // mindestens aber +/- 0.10 (20 % der Karte).
-    final baseTolerance = 0.22;
-    final minTolerance = 0.10;
-    final shrinkPerSuccess = 0.02;
+    final t = _cardFloatController.value;
+    final sinValue = sin(t * 2 * pi);
+
+    const baseTolerance = 0.35;
+    const minTolerance = 0.12;
+    const shrinkPerSuccess = 0.03;
+
     final tolerance =
         (baseTolerance - _successCount * shrinkPerSuccess)
             .clamp(minTolerance, baseTolerance);
 
-    final distanceFromCenter = (relativeY - 0.5).abs();
-    final success = distanceFromCenter <= tolerance;
+    final success = sinValue.abs() <= tolerance;
 
     setState(() {
       _tapSuccess = success;
-      if (success) {
-        _successCount++;
-      }
+      if (success) _successCount++;
       _isAwaitingTap = false;
       _cardFloatController.stop();
     });
@@ -922,7 +959,6 @@ class _CircleGameScreenState extends State<CircleGameScreen>
     return Scaffold(
       appBar: AppBar(
         title: const Text('Kings Cup – Spiel'),
-        automaticallyImplyLeading: false,
         actions: [
           IconButton(
             tooltip: 'Zur Startseite',
@@ -936,242 +972,417 @@ class _CircleGameScreenState extends State<CircleGameScreen>
           ),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              'Aktueller Spieler: $_currentPlayerName',
-              style: GoogleFonts.cinzel(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
+      body: GestureDetector(
+        onTap: _isAwaitingTap ? _handleTapOnMovingCard : null,
+        child: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                Color(0xFF050512),
+                Color(0xFF15152A),
+              ],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
             ),
-            const SizedBox(height: 4),
-            Text('Verbleibende Karten: ${_deck.length}'),
-            const SizedBox(height: 4),
-            Text('Skill-Level: $_successCount'),
-            const SizedBox(height: 16),
-
-            // Tisch + Becher + schwebende Karte
-            Expanded(
-              child: ScaleTransition(
-                scale: _zoomAnimation,
-                child: Center(
+          ),
+          child: SafeArea(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Kopfbereich mit Infos
+                Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      // Kings Cup in der Mitte
-                      Container(
-                        width: 160,
-                        height: 160,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          gradient: const RadialGradient(
-                            colors: [
-                              Color(0xFF3E2723),
-                              Color(0xFF1B1412),
-                            ],
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.6),
-                              blurRadius: 18,
-                              offset: const Offset(0, 10),
-                            ),
-                          ],
-                        ),
-                        child: Center(
-                          child: Text(
-                            'Kings\nCup',
-                            textAlign: TextAlign.center,
-                            style: GoogleFonts.cinzel(
-                              color: Colors.amber,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 18,
-                              letterSpacing: 2,
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-
-                      if (_currentCard != null)
-                        AnimatedBuilder(
-                          animation: _cardFloatController,
-                          builder: (context, child) {
-                            final dy = _isAwaitingTap
-                                ? sin(_cardFloatController.value * pi) * -12
-                                : 0.0;
-                            return Transform.translate(
-                              offset: Offset(0, dy),
-                              child: child,
-                            );
-                          },
-                          child: TappableCard(
-                            card: _currentCard!,
-                            faceDown: _isAwaitingTap,
-                            enabled: _isAwaitingTap,
-                            onTapY: _handleTapOnCard,
-                          ),
-                        )
-                      else
-                        const Text(
-                          'Bereit? Klicke auf „Karte vorbereiten“, um eine '
-                          'neue Karte zu ziehen.',
-                          textAlign: TextAlign.center,
-                        ),
-                      const SizedBox(height: 16),
-
-                      if (_isAwaitingTap)
-                        const Text(
-                          'Tippe in der Mitte der Karte.\n'
-                          'Oben oder unten = Strafschluck!',
-                          textAlign: TextAlign.center,
-                        ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 8),
-
-            if (_currentCard != null && !_isAwaitingTap) ...[
-              Card(
-                color: Colors.white.withValues(alpha: 0.05),
-                elevation: 4,
-                child: Padding(
-                  padding: const EdgeInsets.all(12.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Gezogene Karte: '
-                        '${_currentCard!.rank.shortLabel} '
-                        '${_currentCard!.suit.symbol}',
-                        style: const TextStyle(
+                        'AKTUELLER SPIELER: $_currentPlayerName'.toUpperCase(),
+                        style: TextStyle(
+                          fontFamily: 'KingsCupFont',
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
+                          letterSpacing: 1.5,
                         ),
                       ),
-                      const SizedBox(height: 6),
-                      Text(
-                        _currentCard!.title,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(_currentCard!.description),
-                      const SizedBox(height: 8),
-                      if (_tapSuccess != null)
-                        Text(
-                          _tapSuccess == true
-                              ? 'Du hast perfekt getroffen – sauber rausgezogen! 🎯'
-                              : 'Nicht mittig getroffen – Strafschluck! 🥤',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: _tapSuccess == true
-                                ? Colors.green
-                                : Colors.red,
-                          ),
-                        ),
-                      if (kingInfo != null) ...[
-                        const SizedBox(height: 8),
-                        Text(
-                          kingInfo,
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                      ],
-                      const SizedBox(height: 8),
-                      if (isQuestionCard) ...[
-                        const Divider(),
-                        const Text(
-                          'Frage wählen:',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: OutlinedButton(
-                                onPressed: () {
-                                  setState(() {
-                                    _currentQuestionText =
-                                        'Eigene Frage: Denkt euch eine Frage '
-                                        'und stellt sie der Runde.';
-                                  });
-                                },
-                                child: const Text('Eigene Frage'),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: OutlinedButton(
-                                onPressed: () {
-                                  setState(() {
-                                    if (_currentCard!.rank ==
-                                        CardRank.four) {
-                                      _currentQuestionText =
-                                          QuestionRepository
-                                              .randomGeneralQuestion();
-                                    } else {
-                                      _currentQuestionText =
-                                          QuestionRepository
-                                              .randomNeverHaveIEverQuestion();
-                                    }
-                                  });
-                                },
-                                child: const Text('Frage vom Spiel'),
-                              ),
-                            ),
-                          ],
-                        ),
-                        if (_currentQuestionText != null) ...[
-                          const SizedBox(height: 8),
-                          Text(
-                            _currentQuestionText!,
-                            style: const TextStyle(
-                              fontStyle: FontStyle.italic,
-                            ),
-                          ),
-                        ],
-                      ],
+                      const SizedBox(height: 4),
+                      Text('Verbleibende Karten: ${_deck.length}'),
+                      Text('Skill-Level: $_successCount'),
                     ],
                   ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 8),
 
-            const SizedBox(height: 8),
-
-            Row(
-              children: [
+                // Tisch + Cup + Kartenkreis + Karte + Zielzone
                 Expanded(
-                  child: ElevatedButton(
-                    onPressed: (_currentCard == null && !_isAwaitingTap)
-                        ? _prepareNewCard
-                        : null,
-                    child: const Text('Karte vorbereiten'),
+                  child: Center(
+                    child: SizedBox(
+                      width: 340,
+                      height: 360,
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          // runder „Tisch“
+                          Container(
+                            width: 320,
+                            height: 320,
+                            decoration: const BoxDecoration(
+                              shape: BoxShape.circle,
+                              gradient: RadialGradient(
+                                colors: [
+                                  Color(0xFF3E2723),
+                                  Color(0xFF261313),
+                                  Color(0xFF120A0A),
+                                ],
+                                radius: 0.9,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black87,
+                                  blurRadius: 30,
+                                  offset: Offset(0, 18),
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          // Kartenkreis (Deko-Karten, Rückseite)
+                          const _CardRing(),
+
+                          // Kings Cup in der Mitte
+                          Container(
+                            width: 130,
+                            height: 130,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              gradient: const RadialGradient(
+                                colors: [
+                                  Color(0xFF5D4037),
+                                  Color(0xFF3E2723),
+                                  Color(0xFF1B1412),
+                                ],
+                              ),
+                              border: Border.all(
+                                color: Colors.amber.shade700,
+                                width: 2,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.8),
+                                  blurRadius: 18,
+                                  offset: const Offset(0, 10),
+                                ),
+                              ],
+                            ),
+                            child: Center(
+                              child: Text(
+                                'KINGS\nCUP',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontFamily: 'KingsCupFont',
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.amber.shade200,
+                                  letterSpacing: 2,
+                                ),
+                              ),
+                            ),
+                          ),
+
+                          // Ziel-Rechteck, pulsierend
+                          Positioned(
+                            bottom: 40,
+                            child: AnimatedOpacity(
+                              opacity: _isAwaitingTap ? 1 : 0.3,
+                              duration: const Duration(milliseconds: 300),
+                              child: Container(
+                                width: 160,
+                                height: 80,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: Colors.greenAccent,
+                                    width: 2,
+                                  ),
+                                  color: Colors.greenAccent
+                                      .withOpacity(0.12),
+                                ),
+                              ),
+                            ),
+                          ),
+
+                          // bewegte Karte
+                          if (_currentCard != null)
+                            AnimatedBuilder(
+                              animation: Listenable.merge(
+                                [_cardFloatController, _drawController],
+                              ),
+                              builder: (context, child) {
+                                final drawOffset =
+                                    (1 - _drawController.value) * 90;
+
+                                final floatAmplitude = 70.0;
+                                final floatDy = _isAwaitingTap
+                                    ? sin(_cardFloatController.value *
+                                            2 *
+                                            pi) *
+                                        -floatAmplitude
+                                    : 0.0;
+
+                                final totalDy =
+                                    drawOffset + floatDy;
+
+                                return Transform.translate(
+                                  offset: Offset(0, totalDy),
+                                  child: child,
+                                );
+                              },
+                              child: PlayingCardView(
+                                card: _currentCard!,
+                                faceDown: _isAwaitingTap,
+                                width: 120,
+                                height: 170,
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: (_currentCard != null && !_isAwaitingTap)
-                        ? _endTurnAndNextPlayer
-                        : null,
-                    child: const Text('Zug beenden / Nächster Spieler'),
+
+                const SizedBox(height: 8),
+
+                // Info-Karten unten
+                if (_currentCard != null && !_isAwaitingTap) ...[
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                    child: Card(
+                      color: Colors.white.withOpacity(0.05),
+                      elevation: 4,
+                      child: Padding(
+                        padding: const EdgeInsets.all(12.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Text(
+                              'Gezogene Karte: '
+                              '${_currentCard!.rank.shortLabel} ${_currentCard!.suit.symbol}',
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              _currentCard!.title,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(_currentCard!.description),
+                            const SizedBox(height: 8),
+                            if (_tapSuccess != null)
+                              Text(
+                                _tapSuccess == true
+                                    ? 'Perfekt im Zielbereich gestoppt – kein Strafschluck! 🎯'
+                                    : 'Nicht im Zielbereich – Strafschluck! 🥤',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: _tapSuccess == true
+                                      ? Colors.greenAccent
+                                      : Colors.redAccent,
+                                ),
+                              ),
+                            if (kingInfo != null) ...[
+                              const SizedBox(height: 8),
+                              Text(
+                                kingInfo,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                            const SizedBox(height: 8),
+                            if (isQuestionCard) ...[
+                              const Divider(),
+                              const Text(
+                                'Frage wählen:',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: OutlinedButton(
+                                      onPressed: () {
+                                        setState(() {
+                                          _currentQuestionText =
+                                              'Eigene Frage: Denkt euch eine Frage '
+                                              'und stellt sie der Runde.';
+                                        });
+                                      },
+                                      child: const Text('Eigene Frage'),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: OutlinedButton(
+                                      onPressed: () {
+                                        setState(() {
+                                          if (_currentCard!.rank ==
+                                              CardRank.four) {
+                                            _currentQuestionText =
+                                                QuestionRepository
+                                                    .randomGeneralQuestion();
+                                          } else {
+                                            _currentQuestionText =
+                                                QuestionRepository
+                                                    .randomNeverHaveIEverQuestion();
+                                          }
+                                        });
+                                      },
+                                      child: const Text('Frage vom Spiel'),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              if (_currentQuestionText != null) ...[
+                                const SizedBox(height: 6),
+                                Text(
+                                  _currentQuestionText!,
+                                  style: const TextStyle(
+                                    fontStyle: FontStyle.italic,
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+
+                const SizedBox(height: 8),
+
+                // Buttons unten
+                Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: (_currentCard == null && !_isAwaitingTap)
+                              ? _prepareNewCard
+                              : null,
+                          child: const Text('Karte vorbereiten'),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed:
+                              (_currentCard != null && !_isAwaitingTap)
+                                  ? _endTurnAndNextPlayer
+                                  : null,
+                          child: const Text(
+                            'Zug beenden / Nächster Spieler',
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
-          ],
+          ),
         ),
       ),
     );
   }
 }
+
+/// dekorativer Kartenring (Rückseiten)
+class _CardRing extends StatelessWidget {
+  const _CardRing();
+
+  @override
+  Widget build(BuildContext context) {
+    const cardCount = 16; // nicht alle 52 zeigen, sonst zu voll
+    final radius = 135.0;
+    final cardWidth = 46.0;
+    final cardHeight = 70.0;
+
+    return SizedBox(
+      width: radius * 2 + cardWidth,
+      height: radius * 2 + cardHeight,
+      child: Stack(
+        children: [
+          for (int i = 0; i < cardCount; i++)
+            _buildCardAtAngle(
+              angle: (2 * pi * i) / cardCount,
+              radius: radius,
+              width: cardWidth,
+              height: cardHeight,
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCardAtAngle({
+    required double angle,
+    required double radius,
+    required double width,
+    required double height,
+  }) {
+    final cx = radius + width / 2;
+    final cy = radius + height / 2;
+    final dx = cos(angle) * radius;
+    final dy = sin(angle) * radius;
+
+    return Positioned(
+      left: cx + dx - width / 2,
+      top: cy + dy - height / 2,
+      child: Transform.rotate(
+        angle: angle + pi / 2,
+        child: Container(
+          width: width,
+          height: height,
+          decoration: BoxDecoration(
+            color: const Color(0xFF1E88E5),
+            borderRadius: BorderRadius.circular(6),
+            border: Border.all(
+              color: Colors.white,
+              width: 1,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.4),
+                blurRadius: 6,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          child: Center(
+            child: Text(
+              'KC',
+              style: TextStyle(
+                fontFamily: 'KingsCupFont',
+                fontSize: 12,
+                color: Colors.white,
+                letterSpacing: 1,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
