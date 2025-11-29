@@ -1,0 +1,11 @@
+{
+  "app_title": "Kings Cup",
+  "home_subtitle": "The ultimate party drinking game",
+  "home_play": "Play",
+  "players_title": "Who is playing?",
+  "players_subtitle": "Add your players or just pass the phone around.",
+  "players_start_game": "Start game",
+  "current_player": "Current player: {}",
+  "remaining_cards": "Remaining cards: {}",
+  "skill_level": "Skill level: {}"
+}

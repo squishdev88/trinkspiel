@@ -1,0 +1,11 @@
+{
+  "app_title": "Kings Cup",
+  "home_subtitle": "Das ultimative Party-Trinkspiel",
+  "home_play": "Starten",
+  "players_title": "Wer spielt mit?",
+  "players_subtitle": "Fügt eure Namen hinzu oder gebt das Handy einfach herum.",
+  "players_start_game": "Spiel starten",
+  "current_player": "Aktueller Spieler: {}",
+  "remaining_cards": "Verbleibende Karten: {}",
+  "skill_level": "Skill-Level: {}"
+}

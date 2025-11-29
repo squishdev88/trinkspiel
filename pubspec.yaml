@@ -36,6 +36,7 @@ dependencies:
   cupertino_icons: ^1.0.8
   audioplayers: ^6.5.1
   google_fonts: ^6.3.2
+  easy_localization: ^3.0.8
 
 dev_dependencies:
   flutter_test:
@@ -56,7 +57,16 @@ flutter:
   uses-material-design: true
 
   assets:
-    - assets/sounds/start.mp3
+    - assets/images/           # dein mascot.png (Fullscreen-Background)
+    - assets/sounds/           # start.mp3 usw.
+    - assets/translations/     # de.json / en.json
+
+  fonts:
+    - family: KingsCupFont     # Name, den wir gleich im Code verwenden
+      fonts:
+        - asset: assets/fonts/Cinzel-VariableFont_wght.ttf
+
+
 
   # To add assets to your application, add an assets section, like this:
   # assets:

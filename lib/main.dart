@@ -12,15 +12,31 @@
 // Alles nur mit Flutter + zwei Paketen:
 //   audioplayers    -> Sound
 //   google_fonts    -> schöne Schrift
-
+import 'splash.dart';
 import 'dart:math';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:easy_localization/easy_localization.dart';
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
-void main() {
-  runApp(const MyApp());
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await EasyLocalization.ensureInitialized();
+
+  runApp(
+    EasyLocalization(
+      supportedLocales: const [
+        Locale('de'),
+        Locale('en'),
+      ],
+      path: 'assets/translations',
+      fallbackLocale: const Locale('de'),
+      child: const MyApp(),
+    ),
+  );
 }
+
 
 /// Root-Widget der App.
 class MyApp extends StatelessWidget {
@@ -31,17 +47,32 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Kings Cup',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData.dark().copyWith(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.deepPurple,
-          brightness: Brightness.dark,
-        ),
-        scaffoldBackgroundColor: const Color(0xFF101020),
-      ),
-      home: const HomeScreen(),
+      locale: context.locale,
+      supportedLocales: context.supportedLocales,
+      localizationsDelegates: context.localizationDelegates,
+      navigatorKey: navigatorKey,  
+theme: ThemeData(
+  brightness: Brightness.dark,
+  fontFamily: 'KingsCupFont',         // ✔ hier ist es erlaubt
+  colorScheme: ColorScheme.fromSeed(
+    seedColor: Colors.deepPurple,
+    brightness: Brightness.dark,
+  ),
+  scaffoldBackgroundColor: const Color(0xFF101020),
+),
+
+      home: SplashScreen(
+  onDone: () {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => const HomeScreen()),
+    );
+  },
+),
     );
   }
 }
+
 
 // ===========================================================================
 // STARTSCREEN
@@ -56,203 +87,142 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen>
     with SingleTickerProviderStateMixin {
-  late final AudioPlayer _player;
-  late final AnimationController _pulseController;
-  late final Animation<double> _pulseAnim;
-
-  @override
-  void initState() {
-    super.initState();
-
-    _player = AudioPlayer();
-
-    // Pulsierender Effekt für den "Spielen"-Button.
-    _pulseController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1200),
-    )..repeat(reverse: true);
-
-    _pulseAnim = Tween<double>(begin: 0.95, end: 1.05).animate(
-      CurvedAnimation(
-        parent: _pulseController,
-        curve: Curves.easeInOut,
-      ),
-    );
-
-    // Optional: Start-Sound direkt beim Öffnen abspielen.
-    _playStartSound();
-  }
-
-  Future<void> _playStartSound() async {
-    // Achtung: funktioniert nur, wenn assets/sounds/start.mp3 existiert
-    try {
-      await _player.play(AssetSource('sounds/start.mp3'));
-    } catch (_) {
-      // Wenn die Datei noch nicht existiert, einfach ignorieren.
-    }
-  }
-
-  @override
-  void dispose() {
-    _player.dispose();
-    _pulseController.dispose();
-    super.dispose();
-  }
-
-  void _goToPlayerSetup() {
-    Navigator.of(context).push(
-      PageRouteBuilder(
-        transitionDuration: const Duration(milliseconds: 600),
-        pageBuilder: (_, animation, __) {
-          return FadeTransition(
-            opacity: animation,
-            child: const PlayerSetupScreen(),
-          );
-        },
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    final titleStyle = GoogleFonts.cinzelDecorative(
-      textStyle: const TextStyle(
-        fontSize: 44,
-        fontWeight: FontWeight.bold,
-        letterSpacing: 2,
-        color: Colors.amber,
-      ),
-    );
+    final size = MediaQuery.of(context).size;
 
     return Scaffold(
-      body: SafeArea(
-        child: Stack(
-          children: [
-            // Hintergrundverlauf
-            Container(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Color(0xFF060612),
-                    Color(0xFF1B1630),
-                    Color(0xFF2A1B3D),
-                  ],
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                ),
+      body: Stack(
+        children: [
+          // Vollbild-Hintergrundbild
+          SizedBox(
+            width: size.width,
+            height: size.height,
+            child: Image.asset(
+              'assets/images/mascot.png',
+              fit: BoxFit.cover,
+            ),
+          ),
+
+          // leichte Verdunkelung unten, damit Text/Buttons lesbar sind
+          Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Colors.transparent,
+                  Colors.black54,
+                ],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
               ),
             ),
+          ),
 
-            // „Dunkler Tisch“-Effekt unten
-            Align(
-              alignment: Alignment.bottomCenter,
-              child: Container(
-                height: 200,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      Colors.black.withValues(alpha: 0.0),
-                      Colors.black.withValues(alpha: 0.8),
-                    ],
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                  ),
-                ),
-              ),
-            ),
-
-            // Inhalt
-            Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // Top-Leiste: Sprache + Einstellungen (nur Platzhalter).
-                  Row(
+          SafeArea(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Oben rechts: Flaggen + Settings
+                Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
+                      _languageFlag(const Locale('de'), '🇩🇪'),
+                      const SizedBox(width: 8),
+                      _languageFlag(const Locale('en'), '🇬🇧'),
+                      const SizedBox(width: 8),
                       IconButton(
-                        tooltip: 'Sprache',
                         onPressed: () {
-                          // TODO: später Sprachmenü
+                          // TODO: Settings-Screen später
                         },
-                        icon: const Icon(Icons.language),
-                      ),
-                      IconButton(
-                        tooltip: 'Einstellungen',
-                        onPressed: () {
-                          // TODO: später Settings
-                        },
-                        icon: const Icon(Icons.settings),
+                        icon: const Icon(Icons.settings, color: Colors.white),
                       ),
                     ],
                   ),
-                  const Spacer(),
+                ),
 
-                  // Titel "Kings Cup"
-                  Center(
-                    child: Column(
-                      children: [
-                        Text('Kings',
-                            style: titleStyle.copyWith(fontSize: 40)),
-                        Text('Cup',
-                            style: titleStyle.copyWith(fontSize: 54)),
-                      ],
-                    ),
+                const Spacer(),
+
+                // Unten: Spielen-Button
+                Padding(
+                  padding: const EdgeInsets.only(
+                    left: 24,
+                    right: 24,
+                    bottom: 40,
                   ),
-                  const SizedBox(height: 16),
-                  Center(
-                    child: Text(
-                      'Das ultimative Party-Trinkspiel',
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.8),
-                        letterSpacing: 1.2,
-                      ),
-                    ),
-                  ),
-
-                  const Spacer(),
-
-                  // "Spielen"-Button mit Puls-Animation
-                  Center(
-                    child: ScaleTransition(
-                      scale: _pulseAnim,
-                      child: ElevatedButton(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      ElevatedButton(
                         style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.amber,
+                          foregroundColor: Colors.black,
                           padding: const EdgeInsets.symmetric(
                             horizontal: 60,
                             vertical: 18,
                           ),
-                          backgroundColor: Colors.amber,
-                          foregroundColor: Colors.black,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(32),
+                            borderRadius: BorderRadius.circular(30),
                           ),
-                          elevation: 8,
+                          elevation: 10,
                         ),
-                        onPressed: _goToPlayerSetup,
+                        onPressed: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => const PlayerSetupScreen(),
+                            ),
+                          );
+                        },
                         child: Text(
-                          'SPIELEN',
-                          style: GoogleFonts.cinzel(
-                            fontSize: 22,
+                          'home_play'.tr().toUpperCase(), // z.B. "STARTEN"
+                          style: const TextStyle(
+                            fontSize: 20,
                             fontWeight: FontWeight.bold,
-                            letterSpacing: 3,
+                            letterSpacing: 2,
                           ),
                         ),
                       ),
-                    ),
+                      const SizedBox(height: 8),
+                    ],
                   ),
-
-                  const SizedBox(height: 40),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _languageFlag(Locale locale, String emoji) {
+    final isActive = context.locale == locale;
+
+    return GestureDetector(
+      onTap: () => context.setLocale(locale),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: isActive
+              ? Colors.amber.withOpacity(0.2)
+              : Colors.black.withOpacity(0.3),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isActive ? Colors.amber : Colors.white54,
+            width: 1,
+          ),
+        ),
+        child: Text(
+          emoji,
+          style: const TextStyle(fontSize: 18),
         ),
       ),
     );
   }
 }
+
+
 
 // ===========================================================================
 // SPIELER-EINGABE
