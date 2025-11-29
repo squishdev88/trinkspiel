@@ -18,11 +18,12 @@ class AudioManager {
   Future<void> playBackground() async {
     await _ensureInitialized();
 
-    final volume = (appSettings.masterVolume * appSettings.backgroundVolume)
+    final double volume = (appSettings.masterVolume * appSettings.backgroundVolume)
         .clamp(0.0, 1.0);
 
+    // ❗ WICHTIG: KEIN const HIER!
     await _bgmPlayer.play(
-      const AssetSource('sounds/start.mp3'),
+      AssetSource('sounds/start.mp3'),
       volume: volume,
     );
   }
@@ -34,7 +35,7 @@ class AudioManager {
 
   Future<void> applySettings(AppSettings settings) async {
     await _ensureInitialized();
-    final volume =
+    final double volume =
         (settings.masterVolume * settings.backgroundVolume).clamp(0.0, 1.0);
     await _bgmPlayer.setVolume(volume);
   }

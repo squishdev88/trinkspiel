@@ -1,11 +1,99 @@
 {
   "app_title": "Kings Cup",
-  "home_subtitle": "The ultimate party drinking game",
+
   "home_play": "Play",
-  "players_title": "Who is playing?",
-  "players_subtitle": "Add your players or just pass the phone around.",
-  "players_start_game": "Start game",
-  "current_player": "Current player: {}",
-  "remaining_cards": "Remaining cards: {}",
-  "skill_level": "Skill level: {}"
+
+  "menu_play": "Play",
+  "menu_settings": "Settings",
+  "menu_language": "Language",
+  "menu_players": "Players",
+  "menu_start_game": "Start Game",
+  "menu_add_player": "Add Player",
+  "menu_remove_player": "Remove",
+  "menu_no_players": "No players added",
+
+  "settings_title": "Settings",
+  "settings_sound": "Sound Effects",
+  "settings_music": "Music",
+  "settings_language": "Language",
+  "settings_back": "Back",
+
+  "game_title": "Kings Cup",
+  "game_draw_card": "Prepare card",
+  "game_next_player": "Next player:",
+  "game_wrong_timing": "Miss! Take a sip.",
+  "game_perfect_timing": "Perfect! No sip for you.",
+  "game_finish": "End game",
+  "game_continue": "Continue",
+  "game_round": "Round",
+
+  "target_tap_now": "Tap now!",
+  "target_wait": "Wait for the right moment…",
+  "target_penalty": "Miss! Penalty sip!",
+
+  "question_pick_source": "Choose question source",
+  "question_custom": "Custom question",
+  "question_from_game": "Game question",
+  "question_submit": "Confirm",
+  "question_enter_text": "Enter your question",
+  "question_next": "Next question",
+
+  "question_category_general": "General questions",
+  "question_category_nhie": "Never Have I Ever",
+  "question_random": "Random question",
+
+  "general_questions": [
+    "How many continents are there?",
+    "How many federal states does Germany have?",
+    "How many minutes are in one hour?",
+    "How many players are currently in this round?",
+    "How many cards are in a standard deck?"
+  ],
+
+  "nhie_questions": [
+    "Never have I ever stolen something.",
+    "Never have I ever cheated in an exam.",
+    "Never have I ever ghosted someone.",
+    "Never have I ever forgotten my birthday.",
+    "Never have I ever secretly drunk something I shouldn't have."
+  ],
+
+  "card_ace_title": "Ace – Waterfall",
+  "card_ace_desc": "Everyone drinks until the person to your left stops. You begin.",
+
+  "card_2_title": "Two – Give 2",
+  "card_2_desc": "Distribute a total of 2 sips to any players.",
+
+  "card_3_title": "Three – Take 3",
+  "card_3_desc": "You drink 3 sips.",
+
+  "card_4_title": "Four – Question Master",
+  "card_4_desc": "Ask a question. Anyone who is wrong drinks.",
+
+  "card_5_title": "Five – Category",
+  "card_5_desc": "Choose a category. Go around. Whoever fails drinks.",
+
+  "card_6_title": "Six – Chicks",
+  "card_6_desc": "All women drink one sip.",
+
+  "card_7_title": "Seven – Heaven",
+  "card_7_desc": "Hands up! The last one drinks.",
+
+  "card_8_title": "Eight – Mate",
+  "card_8_desc": "Choose a drinking buddy. They drink with you until the next 8.",
+
+  "card_9_title": "Nine – Rhyme",
+  "card_9_desc": "Start with a word. Everyone must rhyme. Whoever fails drinks.",
+
+  "card_10_title": "Ten – Men drink",
+  "card_10_desc": "All men drink one sip.",
+
+  "card_jack_title": "Jack – New rule",
+  "card_jack_desc": "Create a new rule that applies from now on.",
+
+  "card_queen_title": "Queen – Never Have I Ever",
+  "card_queen_desc": "Say something you've never done. Anyone who has must drink.",
+
+  "card_king_title": "King – Kings Cup",
+  "card_king_desc": "Pour a sip into the cup. Whoever draws the 4th King drinks it."
 }

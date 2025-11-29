@@ -23,10 +23,9 @@ class _SplashScreenState extends State<SplashScreen>
   void initState() {
     super.initState();
 
-    // Text-Animation (KINGS CUP von links rein + Fade)
     _textController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1000),
+      duration: const Duration(milliseconds: 900),
     );
 
     _slideAnim = Tween<Offset>(
@@ -46,35 +45,33 @@ class _SplashScreenState extends State<SplashScreen>
 
     _textController.forward();
 
-    // Karten-Animation: erst wippen, dann groß zoomen
     _cardController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1800),
     );
 
     _cardRotation = Tween<double>(
-      begin: -0.35,
-      end: 0.35,
+      begin: -0.4,
+      end: 2 * 3.14159, // 1 Drehung
     ).animate(
       CurvedAnimation(
         parent: _cardController,
-        curve: const Interval(0.0, 0.6, curve: Curves.easeInOut),
+        curve: const Interval(0.0, 0.7, curve: Curves.easeInOut),
       ),
     );
 
     _cardScale = Tween<double>(
       begin: 1.0,
-      end: 10.0, // zoomt quasi in die Karte rein
+      end: 18.0,
     ).animate(
       CurvedAnimation(
         parent: _cardController,
-        curve: const Interval(0.55, 1.0, curve: Curves.easeIn),
+        curve: const Interval(0.5, 1.0, curve: Curves.easeIn),
       ),
     );
 
     _cardController.forward();
 
-    // Wenn die Karten-Animation fertig ist -> HomeScreen anzeigen
     _cardController.addStatusListener((status) {
       if (status == AnimationStatus.completed) {
         widget.onDone();
@@ -132,7 +129,7 @@ class _SplashScreenState extends State<SplashScreen>
                     border: Border.all(color: Colors.amber, width: 2),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.5),
+                        color: Colors.black.withOpacity(0.6),
                         blurRadius: 12,
                         offset: const Offset(0, 6),
                       ),

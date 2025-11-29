@@ -1,11 +1,99 @@
 {
   "app_title": "Kings Cup",
-  "home_subtitle": "Das ultimative Party-Trinkspiel",
-  "home_play": "Starten",
-  "players_title": "Wer spielt mit?",
-  "players_subtitle": "Fügt eure Namen hinzu oder gebt das Handy einfach herum.",
-  "players_start_game": "Spiel starten",
-  "current_player": "Aktueller Spieler: {}",
-  "remaining_cards": "Verbleibende Karten: {}",
-  "skill_level": "Skill-Level: {}"
+
+  "home_play": "Spielen",
+
+  "menu_play": "Spielen",
+  "menu_settings": "Einstellungen",
+  "menu_language": "Sprache",
+  "menu_players": "Spieler",
+  "menu_start_game": "Spiel starten",
+  "menu_add_player": "Spieler hinzufügen",
+  "menu_remove_player": "Löschen",
+  "menu_no_players": "Keine Spieler hinzugefügt",
+
+  "settings_title": "Einstellungen",
+  "settings_sound": "Soundeffekte",
+  "settings_music": "Musik",
+  "settings_language": "Sprache",
+  "settings_back": "Zurück",
+
+  "game_title": "Kings Cup",
+  "game_draw_card": "Karte vorbereiten",
+  "game_next_player": "Nächster Spieler:",
+  "game_wrong_timing": "Daneben! Trinke einen Schluck.",
+  "game_perfect_timing": "Perfekt! Kein Schluck für dich.",
+  "game_finish": "Spiel beenden",
+  "game_continue": "Weiter",
+  "game_round": "Runde",
+
+  "target_tap_now": "Jetzt tippen!",
+  "target_wait": "Warte auf den richtigen Moment …",
+  "target_penalty": "Daneben! Strafschluck!",
+
+  "question_pick_source": "Woher soll die Frage kommen?",
+  "question_custom": "Eigene Frage",
+  "question_from_game": "Frage aus dem Spiel",
+  "question_submit": "Bestätigen",
+  "question_enter_text": "Frage eingeben",
+  "question_next": "Nächste Frage",
+
+  "question_category_general": "Allgemeine Fragen",
+  "question_category_nhie": "Ich habe noch nie …",
+  "question_random": "Zufallsfrage",
+
+  "general_questions": [
+    "Wie viele Kontinente gibt es?",
+    "Wie viele Bundesländer hat Deutschland?",
+    "Wie viele Minuten hat eine Stunde?",
+    "Wie viele Spieler sind gerade in dieser Runde?",
+    "Wie viele Karten hat ein Standard-Kartendeck?"
+  ],
+
+  "nhie_questions": [
+    "Ich habe noch nie geklaut.",
+    "Ich habe noch nie bei einer Prüfung geschummelt.",
+    "Ich habe noch nie jemanden geghostet.",
+    "Ich habe noch nie meinen Geburtstag vergessen.",
+    "Ich habe noch nie heimlich etwas weggetrunken."
+  ],
+
+  "card_ace_title": "Ass – Wasserfall",
+  "card_ace_desc": "Alle trinken, bis die Person links von dir aufhört. Du beginnst.",
+
+  "card_2_title": "Zwei – 2 verteilen",
+  "card_2_desc": "Verteile insgesamt 2 Schlucke an beliebige Spieler.",
+
+  "card_3_title": "Drei – 3 trinken",
+  "card_3_desc": "Du trinkst selbst 3 Schlucke.",
+
+  "card_4_title": "Vier – Frage an alle",
+  "card_4_desc": "Stelle eine beliebige Frage. Wer falsch liegt, trinkt.",
+
+  "card_5_title": "Fünf – Kategorie",
+  "card_5_desc": "Wähle ein Thema. Wer nichts mehr weiß, trinkt.",
+
+  "card_6_title": "Sechs – Damen trinken",
+  "card_6_desc": "Alle Frauen trinken einen Schluck.",
+
+  "card_7_title": "Sieben – Heaven",
+  "card_7_desc": "Finger nach oben! Wer zuletzt reagiert, trinkt.",
+
+  "card_8_title": "Acht – Trinkpartner",
+  "card_8_desc": "Wähle eine Person, die immer mit dir trinkt – bis zur nächsten 8.",
+
+  "card_9_title": "Neun – Reimen",
+  "card_9_desc": "Sag ein Wort, dann wird gereimt. Wer scheitert, trinkt.",
+
+  "card_10_title": "Zehn – Männer trinken",
+  "card_10_desc": "Alle Männer trinken einen Schluck.",
+
+  "card_jack_title": "Bube – Neue Regel",
+  "card_jack_desc": "Erstelle eine neue Regel, die ab sofort gilt.",
+
+  "card_queen_title": "Dame – Ich hab noch nie …",
+  "card_queen_desc": "Sage etwas, das du nie getan hast. Wer es getan hat, trinkt.",
+
+  "card_king_title": "König – Kings Cup",
+  "card_king_desc": "Gib einen Schluck in den Cup. Wer den 4. König zieht, trinkt ihn."
 }

@@ -18,13 +18,16 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'settings/app_settings.dart';
+import 'settings/audio_manager.dart';
+import 'settings/settings_screen.dart';
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await EasyLocalization.ensureInitialized();
-
+  await AudioManager.instance.applySettings(appSettings);
   runApp(
     EasyLocalization(
       supportedLocales: const [
@@ -75,8 +78,9 @@ theme: ThemeData(
 
 
 // ===========================================================================
-// STARTSCREEN
+// STARTSCREEN (mit Musik nur hier)
 // ===========================================================================
+
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -87,6 +91,40 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen>
     with SingleTickerProviderStateMixin {
+  late final AnimationController _contentController;
+  late final Animation<double> _contentFade;
+
+
+ @override
+void initState() {
+  super.initState();
+
+  // 🎵 Hintergrundmusik nur hier starten
+  AudioManager.instance.playBackground();
+
+  _contentController = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 800),
+  );
+
+  _contentFade = CurvedAnimation(
+    parent: _contentController,
+    curve: Curves.easeOut,
+  );
+
+  _contentController.forward();
+}
+
+@override
+void dispose() {
+  // Wenn du möchtest, dass im Hauptmenü die Musik enden darf:
+  AudioManager.instance.stopBackground();
+
+  _contentController.dispose();
+  super.dispose();
+}
+
+ 
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
@@ -104,14 +142,11 @@ class _HomeScreenState extends State<HomeScreen>
             ),
           ),
 
-          // leichte Verdunkelung unten, damit Text/Buttons lesbar sind
+          // leichter Gradient
           Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
-                colors: [
-                  Colors.transparent,
-                  Colors.black54,
-                ],
+                colors: [Colors.transparent, Colors.black54],
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
               ),
@@ -119,76 +154,86 @@ class _HomeScreenState extends State<HomeScreen>
           ),
 
           SafeArea(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // Oben rechts: Flaggen + Settings
-                Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      _languageFlag(const Locale('de'), '🇩🇪'),
-                      const SizedBox(width: 8),
-                      _languageFlag(const Locale('en'), '🇬🇧'),
-                      const SizedBox(width: 8),
-                      IconButton(
-                        onPressed: () {
-                          // TODO: Settings-Screen später
-                        },
-                        icon: const Icon(Icons.settings, color: Colors.white),
-                      ),
-                    ],
-                  ),
-                ),
-
-                const Spacer(),
-
-                // Unten: Spielen-Button
-                Padding(
-                  padding: const EdgeInsets.only(
-                    left: 24,
-                    right: 24,
-                    bottom: 40,
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.amber,
-                          foregroundColor: Colors.black,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 60,
-                            vertical: 18,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(30),
-                          ),
-                          elevation: 10,
+            child: FadeTransition(
+              opacity: _contentFade,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Flaggen + Settings oben rechts
+                  Padding(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        _languageFlag(const Locale('de'), '🇩🇪'),
+                        const SizedBox(width: 8),
+                        _languageFlag(const Locale('en'), '🇬🇧'),
+                        const SizedBox(width: 8),
+                        IconButton(
+                          onPressed: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => const SettingsScreen(),
+                              ),
+                            );
+                          },
+                          icon: const Icon(Icons.settings, color: Colors.white),
                         ),
-                        onPressed: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) => const PlayerSetupScreen(),
+                      ],
+                    ),
+                  ),
+
+                  const Spacer(),
+
+                  // "SPIELEN"-Button unten
+                  Padding(
+                    padding: const EdgeInsets.only(
+                      left: 24,
+                      right: 24,
+                      bottom: 40,
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.amber,
+                              foregroundColor: Colors.black,
+                              padding: const EdgeInsets.symmetric(
+                                vertical: 18,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(30),
+                              ),
+                              elevation: 10,
                             ),
-                          );
-                        },
-                        child: Text(
-                          'home_play'.tr().toUpperCase(), // z.B. "STARTEN"
-                          style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 2,
+                            onPressed: () {
+                              // Wenn die Musik im Menü bleiben soll: diese Zeile weglassen.
+                              AudioManager.instance.stopBackground();
+
+                              Navigator.of(context).push(
+                                MaterialPageRoute(builder: (_) => const PlayerSetupScreen()),
+                              );
+                            },
+
+                            child: Text(
+                              'home_play'.tr().toUpperCase(),
+                              style: const TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 2,
+                              ),
+                            ),
                           ),
                         ),
-                      ),
-                      const SizedBox(height: 8),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ],
@@ -204,9 +249,9 @@ class _HomeScreenState extends State<HomeScreen>
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(
-              color: isActive
-    ? Colors.amber.withOpacity(0.2)
-    : Colors.black.withOpacity(0.3),
+          color: isActive
+              ? Colors.amber.withOpacity(0.2)
+              : Colors.black.withOpacity(0.3),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: isActive ? Colors.amber : Colors.white54,
@@ -228,9 +273,7 @@ class _HomeScreenState extends State<HomeScreen>
 // SPIELER-EINGABE
 // ===========================================================================
 
-// ===========================================================================
-// SPIELER-EINGABE – NEU DESIGNED
-// ===========================================================================
+
 class PlayerSetupScreen extends StatefulWidget {
   const PlayerSetupScreen({super.key});
 
@@ -291,26 +334,32 @@ class _PlayerSetupScreenState extends State<PlayerSetupScreen>
   }
 
   void _startGame() {
-    final players = _playerControllers
-        .map((c) => c.text.trim())
-        .where((name) => name.isNotEmpty)
-        .toList();
+  final players = _playerControllers
+      .map((c) => c.text.trim())
+      .where((name) => name.isNotEmpty)
+      .toList();
 
-    if (players.length < 2) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Bitte mindestens 2 Spieler eintragen.'),
-        ),
-      );
-      return;
-    }
+  if (players.length < 2) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Bitte mindestens 2 Spieler eintragen.'),
+      ),
+    );
+    return;
+  }
+
+  // Falls eine asynchrone Animation oder ein Sound kommen soll:
+  Future.delayed(const Duration(milliseconds: 300), () {
+    if (!mounted) return;
 
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(
         builder: (_) => CircleGameScreen(players: players),
       ),
     );
-  }
+  });
+}
+
 
   @override
   Widget build(BuildContext context) {
@@ -327,14 +376,10 @@ class _PlayerSetupScreenState extends State<PlayerSetupScreen>
       ),
       body: Stack(
         children: [
-          // leichter Hintergrundverlauf
           Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
-                colors: [
-                  Color(0xFF0B0B18),
-                  Color(0xFF17152A),
-                ],
+                colors: [Color(0xFF0B0B18), Color(0xFF17152A)],
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
               ),
@@ -366,11 +411,7 @@ class _PlayerSetupScreenState extends State<PlayerSetupScreen>
                           itemBuilder: (context, index) {
                             final animation = CurvedAnimation(
                               parent: _listAnimController,
-                              curve: Interval(
-                                0.0,
-                                1.0,
-                                // alle Elemente kriegen dieselbe Kurve; reicht hier
-                              ),
+                              curve: Curves.easeOut,
                             );
                             return FadeTransition(
                               opacity: animation,
@@ -395,8 +436,10 @@ class _PlayerSetupScreenState extends State<PlayerSetupScreen>
                           onPressed: _addPlayerField,
                           style: OutlinedButton.styleFrom(
                             foregroundColor: Colors.amber,
-                            side:
-                                const BorderSide(color: Colors.amber, width: 1),
+                            side: const BorderSide(
+                              color: Colors.amber,
+                              width: 1,
+                            ),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(24),
                             ),
@@ -415,15 +458,14 @@ class _PlayerSetupScreenState extends State<PlayerSetupScreen>
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.amber,
                         foregroundColor: Colors.black,
-                        padding: const EdgeInsets.symmetric(
-                          vertical: 16,
-                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(28),
                         ),
                       ),
                       child: const Text(
                         'KINGS CUP STARTEN',
+                        textAlign: TextAlign.center,
                         style: TextStyle(
                           letterSpacing: 1.5,
                           fontWeight: FontWeight.bold,
@@ -447,17 +489,11 @@ class _PlayerSetupScreenState extends State<PlayerSetupScreen>
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(18),
           gradient: const LinearGradient(
-            colors: [
-              Color(0xFF201C35),
-              Color(0xFF2B2142),
-            ],
+            colors: [Color(0xFF201C35), Color(0xFF2B2142)],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
-          border: Border.all(
-            color: Colors.white24,
-            width: 1,
-          ),
+          border: Border.all(color: Colors.white24, width: 1),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.4),
@@ -516,6 +552,25 @@ enum CardRank {
   jack,
   queen,
   king,
+}
+extension CardRankKey on CardRank {
+  String get key {
+    switch (this) {
+      case CardRank.ace:   return 'card_ace';
+      case CardRank.two:   return 'card_2';
+      case CardRank.three: return 'card_3';
+      case CardRank.four:  return 'card_4';
+      case CardRank.five:  return 'card_5';
+      case CardRank.six:   return 'card_6';
+      case CardRank.seven: return 'card_7';
+      case CardRank.eight: return 'card_8';
+      case CardRank.nine:  return 'card_9';
+      case CardRank.ten:   return 'card_10';
+      case CardRank.jack:  return 'card_jack';
+      case CardRank.queen: return 'card_queen';
+      case CardRank.king:  return 'card_king';
+    }
+  }
 }
 
 extension CardRankDisplay on CardRank {
@@ -602,109 +657,41 @@ class GameCard {
 class QuestionRepository {
   static final Random _random = Random();
 
-  static const List<String> generalQuestions = [
-    'Wie viele Kontinente gibt es?',
-    'Wie viele Bundesländer hat Deutschland?',
-    'Wie viele Minuten hat eine Stunde?',
-    'Wie viele Spieler sind gerade in dieser Runde?',
-    'Wie viele Karten hat ein Standard-Kartendeck?',
-  ];
+  /// Zufällige Allgemeinfrage (wird aus der aktuellen Sprache geladen)
+  static String randomGeneralQuestion() {
+    final List<dynamic> list =
+        "general_questions".tr() as List<dynamic>;
+    return list[_random.nextInt(list.length)] as String;
+  }
 
-  static const List<String> neverHaveIEverQuestions = [
-    'Ich habe noch nie geklaut.',
-    'Ich habe noch nie bei einer Prüfung geschummelt.',
-    'Ich habe noch nie jemanden geghostet.',
-    'Ich habe noch nie meinen Geburtstag vergessen.',
-    'Ich habe noch nie heimlich etwas weggetrunken.',
-  ];
-
-  static String randomGeneralQuestion() =>
-      generalQuestions[_random.nextInt(generalQuestions.length)];
-
-  static String randomNeverHaveIEverQuestion() =>
-      neverHaveIEverQuestions[_random.nextInt(neverHaveIEverQuestions.length)];
+  /// Zufällige "Ich habe noch nie..."-Frage
+  static String randomNeverHaveIEverQuestion() {
+    final List<dynamic> list =
+        "nhie_questions".tr() as List<dynamic>;
+    return list[_random.nextInt(list.length)] as String;
+  }
 }
+
 
 /// 52-Karten-Deck erstellen
 List<GameCard> createFullCircleDeck() {
   final List<GameCard> cards = [];
 
-  String titleForRank(CardRank rank) {
-    switch (rank) {
-      case CardRank.ace:
-        return 'Wasserfall';
-      case CardRank.two:
-        return 'Zwei verteilen';
-      case CardRank.three:
-        return 'Drei trinken';
-      case CardRank.four:
-        return 'Frage an alle';
-      case CardRank.five:
-        return 'Kategorie';
-      case CardRank.six:
-        return 'Damen trinken';
-      case CardRank.seven:
-        return 'Heaven';
-      case CardRank.eight:
-        return 'Trinkpartner';
-      case CardRank.nine:
-        return 'Reimen';
-      case CardRank.ten:
-        return 'Männer trinken';
-      case CardRank.jack:
-        return 'Neue Regel';
-      case CardRank.queen:
-        return 'Ich hab noch nie…';
-      case CardRank.king:
-        return 'König – Kings Cup';
-    }
-  }
-
-  String descriptionForRank(CardRank rank) {
-    switch (rank) {
-      case CardRank.ace:
-        return 'Wasserfall: Alle trinken, bis die Person links von dir stoppt. '
-            'Du beginnst.';
-      case CardRank.two:
-        return 'Verteile insgesamt 2 Schlucke an beliebige Person(en).';
-      case CardRank.three:
-        return 'Du trinkst selbst 3 Schlucke.';
-      case CardRank.four:
-        return 'Frage an alle: Eigene Frage oder Frage vom Spiel.';
-      case CardRank.five:
-        return 'Kategorie: Wähle ein Thema, reihum wird genannt. '
-            'Wer nichts mehr weiß, trinkt.';
-      case CardRank.six:
-        return 'Alle Damen trinken einen Schluck.';
-      case CardRank.seven:
-        return 'Heaven: Finger nach oben. Wer zuletzt reagiert, trinkt.';
-      case CardRank.eight:
-        return 'Trinkpartner: Wähle eine Person, die immer mit dir trinkt, '
-            'bis die nächste 8 kommt.';
-      case CardRank.nine:
-        return 'Reimen: Denke ein Wort, reihum wird gereimt. '
-            'Wer nichts mehr weiß, trinkt.';
-      case CardRank.ten:
-        return 'Alle Männer trinken einen Schluck.';
-      case CardRank.jack:
-        return 'Neue Regel: Denke dir eine Hausregel aus, die ab jetzt gilt.';
-      case CardRank.queen:
-        return 'Ich hab noch nie…: Alle, die die Aussage doch getan haben, '
-            'müssen trinken.';
-      case CardRank.king:
-        return 'König – Kings Cup: Einen Schluck in den Cup schütten. '
-            'Der 4. König muss den Cup austrinken.';
-    }
-  }
-
   for (final suit in CardSuit.values) {
     for (final rank in CardRank.values) {
+      
+      // Übersetzungs-Schlüssel generieren
+      final titleKey = '${rank.key}_title';
+      final descKey  = '${rank.key}_desc';
+
       cards.add(
         GameCard(
           rank: rank,
           suit: suit,
-          title: titleForRank(rank),
-          description: descriptionForRank(rank),
+
+          // Titel & Beschreibung aus JSON übersetzen
+          title: titleKey.tr(),
+          description: descKey.tr(),
         ),
       );
     }
@@ -712,16 +699,14 @@ List<GameCard> createFullCircleDeck() {
   return cards;
 }
 
+
 // ===========================================================================
 // KARTEN-VISUALISIERUNG & TAP-MECHANIK
 // ===========================================================================
 
-/// Zeigt eine Spielkarte an (Vorder- oder Rückseite).
 class PlayingCardView extends StatelessWidget {
   final GameCard card;
   final bool faceDown;
-
-  // NEU:
   final double width;
   final double height;
 
@@ -774,6 +759,7 @@ class PlayingCardView extends StatelessWidget {
     );
   }
 }
+
 
 
 /// Karte, die angetippt werden kann.
@@ -844,6 +830,7 @@ class _CircleGameScreenState extends State<CircleGameScreen>
   int _successCount = 0;
   String? _currentQuestionText;
 
+  // 🔹 HIER: Controller-Felder deklarieren
   late final AnimationController _cardFloatController;
   late final AnimationController _drawController;
 
@@ -854,9 +841,10 @@ class _CircleGameScreenState extends State<CircleGameScreen>
     super.initState();
     _deck = createFullCircleDeck();
 
+    // 🔹 4.1 Controller anlegen
     _cardFloatController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 800),
+      duration: const Duration(milliseconds: 900),
     );
 
     _drawController = AnimationController(
@@ -882,9 +870,7 @@ class _CircleGameScreenState extends State<CircleGameScreen>
   void _prepareNewCard() {
     if (_deck.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Deck leer – Spiel vorbei!'),
-        ),
+        const SnackBar(content: Text('Deck leer – Spiel vorbei!')),
       );
       return;
     }
@@ -901,30 +887,34 @@ class _CircleGameScreenState extends State<CircleGameScreen>
         _drawnKings++;
       }
 
+      // Draw-Animation (Karte vom Tisch hoch)
       _drawController
         ..reset()
         ..forward();
+
+      // 🔹 Controller starten – Karte schwebt hoch/runter
       _cardFloatController
         ..reset()
         ..repeat(reverse: true);
     });
   }
 
+  // 🔹 4.3 Skill-basierte Trefferlogik
   void _handleTapOnMovingCard() {
     if (!_isAwaitingTap || _currentCard == null) return;
 
-    final t = _cardFloatController.value;
-    final sinValue = sin(t * 2 * pi);
+    final t = _cardFloatController.value; // 0.0 - 1.0
+    const center = 0.5;
 
-    const baseTolerance = 0.35;
-    const minTolerance = 0.12;
-    const shrinkPerSuccess = 0.03;
+    const baseTolerance = 0.25;   // Anfangs großzügig
+    const minTolerance = 0.08;    // niemals kleiner
+    const shrinkPerSuccess = 0.02;
 
     final tolerance =
         (baseTolerance - _successCount * shrinkPerSuccess)
             .clamp(minTolerance, baseTolerance);
 
-    final success = sinValue.abs() <= tolerance;
+    final success = (t - center).abs() <= tolerance;
 
     setState(() {
       _tapSuccess = success;
@@ -958,29 +948,15 @@ class _CircleGameScreenState extends State<CircleGameScreen>
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Kings Cup – Spiel'),
-        actions: [
-          IconButton(
-            tooltip: 'Zur Startseite',
-            onPressed: () {
-              Navigator.of(context).pushAndRemoveUntil(
-                MaterialPageRoute(builder: (_) => const HomeScreen()),
-                (route) => false,
-              );
-            },
-            icon: const Icon(Icons.home),
-          ),
-        ],
+        title: const Text('KINGS CUP – SPIEL'),
       ),
+      // 🔹 Tipp-Geste für den Skill-Hit
       body: GestureDetector(
         onTap: _isAwaitingTap ? _handleTapOnMovingCard : null,
         child: Container(
           decoration: const BoxDecoration(
             gradient: LinearGradient(
-              colors: [
-                Color(0xFF050512),
-                Color(0xFF15152A),
-              ],
+              colors: [Color(0xFF050512), Color(0xFF15152A)],
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
             ),
@@ -989,7 +965,7 @@ class _CircleGameScreenState extends State<CircleGameScreen>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Kopfbereich mit Infos
+                // Kopfbereich
                 Padding(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -997,7 +973,7 @@ class _CircleGameScreenState extends State<CircleGameScreen>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'AKTUELLER SPIELER: $_currentPlayerName'.toUpperCase(),
+                        'AKTUELLER SPIELER: $_currentPlayerName',
                         style: TextStyle(
                           fontFamily: 'KingsCupFont',
                           fontSize: 18,
@@ -1011,9 +987,8 @@ class _CircleGameScreenState extends State<CircleGameScreen>
                     ],
                   ),
                 ),
-                const SizedBox(height: 8),
 
-                // Tisch + Cup + Kartenkreis + Karte + Zielzone
+                // Tisch + Becher + Kartenring + Karte + Zielkreis
                 Expanded(
                   child: Center(
                     child: SizedBox(
@@ -1022,7 +997,7 @@ class _CircleGameScreenState extends State<CircleGameScreen>
                       child: Stack(
                         alignment: Alignment.center,
                         children: [
-                          // runder „Tisch“
+                          // Tisch (runder Hintergrund)
                           Container(
                             width: 320,
                             height: 320,
@@ -1046,7 +1021,7 @@ class _CircleGameScreenState extends State<CircleGameScreen>
                             ),
                           ),
 
-                          // Kartenkreis (Deko-Karten, Rückseite)
+                          // Kartenring
                           const _CardRing(),
 
                           // Kings Cup in der Mitte
@@ -1063,7 +1038,7 @@ class _CircleGameScreenState extends State<CircleGameScreen>
                                 ],
                               ),
                               border: Border.all(
-                                color: Colors.amber.shade700,
+                                color: Colors.amber,
                                 width: 2,
                               ),
                               boxShadow: [
@@ -1074,44 +1049,43 @@ class _CircleGameScreenState extends State<CircleGameScreen>
                                 ),
                               ],
                             ),
-                            child: Center(
+                            child: const Center(
                               child: Text(
                                 'KINGS\nCUP',
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
-                                  fontFamily: 'KingsCupFont',
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
-                                  color: Colors.amber.shade200,
+                                  color: Colors.amber,
                                   letterSpacing: 2,
                                 ),
                               ),
                             ),
                           ),
 
-                          // Ziel-Rechteck, pulsierend
+                          // 🔵 Zielkreis unten
                           Positioned(
                             bottom: 40,
                             child: AnimatedOpacity(
                               opacity: _isAwaitingTap ? 1 : 0.3,
                               duration: const Duration(milliseconds: 300),
                               child: Container(
-                                width: 160,
-                                height: 80,
+                                width: 120,
+                                height: 120,
                                 decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(12),
+                                  shape: BoxShape.circle,
                                   border: Border.all(
                                     color: Colors.greenAccent,
-                                    width: 2,
+                                    width: 3,
                                   ),
-                                  color: Colors.greenAccent
-                                      .withOpacity(0.12),
+                                  color:
+                                      Colors.greenAccent.withOpacity(0.08),
                                 ),
                               ),
                             ),
                           ),
 
-                          // bewegte Karte
+                          // 🔹 4.2 Karte mit AnimatedBuilder bewegen
                           if (_currentCard != null)
                             AnimatedBuilder(
                               animation: Listenable.merge(
@@ -1121,16 +1095,14 @@ class _CircleGameScreenState extends State<CircleGameScreen>
                                 final drawOffset =
                                     (1 - _drawController.value) * 90;
 
-                                final floatAmplitude = 70.0;
+                                // 0 .. 1
+                                final t = _cardFloatController.value;
+                                const floatAmplitude = 70.0;
                                 final floatDy = _isAwaitingTap
-                                    ? sin(_cardFloatController.value *
-                                            2 *
-                                            pi) *
-                                        -floatAmplitude
+                                    ? (t * 2 - 1) * -floatAmplitude
                                     : 0.0;
 
-                                final totalDy =
-                                    drawOffset + floatDy;
+                                final totalDy = drawOffset + floatDy;
 
                                 return Transform.translate(
                                   offset: Offset(0, totalDy),
@@ -1150,25 +1122,23 @@ class _CircleGameScreenState extends State<CircleGameScreen>
                   ),
                 ),
 
-                const SizedBox(height: 8),
-
-                // Info-Karten unten
-                if (_currentCard != null && !_isAwaitingTap) ...[
+                // Info-Karte unten nach dem Ziehen
+                if (_currentCard != null && !_isAwaitingTap)
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12.0),
                     child: Card(
                       color: Colors.white.withOpacity(0.05),
-                      elevation: 4,
                       child: Padding(
                         padding: const EdgeInsets.all(12.0),
                         child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          crossAxisAlignment:
+                              CrossAxisAlignment.stretch,
                           children: [
                             Text(
                               'Gezogene Karte: '
                               '${_currentCard!.rank.shortLabel} ${_currentCard!.suit.symbol}',
                               style: const TextStyle(
-                                fontSize: 16,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -1185,7 +1155,7 @@ class _CircleGameScreenState extends State<CircleGameScreen>
                             if (_tapSuccess != null)
                               Text(
                                 _tapSuccess == true
-                                    ? 'Perfekt im Zielbereich gestoppt – kein Strafschluck! 🎯'
+                                    ? 'Perfekt im Zielbereich – kein Strafschluck! 🎯'
                                     : 'Nicht im Zielbereich – Strafschluck! 🥤',
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
@@ -1203,80 +1173,26 @@ class _CircleGameScreenState extends State<CircleGameScreen>
                                 ),
                               ),
                             ],
-                            const SizedBox(height: 8),
-                            if (isQuestionCard) ...[
-                              const Divider(),
-                              const Text(
-                                'Frage wählen:',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              const SizedBox(height: 6),
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: OutlinedButton(
-                                      onPressed: () {
-                                        setState(() {
-                                          _currentQuestionText =
-                                              'Eigene Frage: Denkt euch eine Frage '
-                                              'und stellt sie der Runde.';
-                                        });
-                                      },
-                                      child: const Text('Eigene Frage'),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: OutlinedButton(
-                                      onPressed: () {
-                                        setState(() {
-                                          if (_currentCard!.rank ==
-                                              CardRank.four) {
-                                            _currentQuestionText =
-                                                QuestionRepository
-                                                    .randomGeneralQuestion();
-                                          } else {
-                                            _currentQuestionText =
-                                                QuestionRepository
-                                                    .randomNeverHaveIEverQuestion();
-                                          }
-                                        });
-                                      },
-                                      child: const Text('Frage vom Spiel'),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              if (_currentQuestionText != null) ...[
-                                const SizedBox(height: 6),
-                                Text(
-                                  _currentQuestionText!,
-                                  style: const TextStyle(
-                                    fontStyle: FontStyle.italic,
-                                  ),
-                                ),
-                              ],
-                            ],
                           ],
                         ),
                       ),
                     ),
                   ),
-                ],
 
                 const SizedBox(height: 8),
 
                 // Buttons unten
                 Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
                   child: Row(
                     children: [
                       Expanded(
                         child: ElevatedButton(
-                          onPressed: (_currentCard == null && !_isAwaitingTap)
+                          onPressed: (_currentCard == null &&
+                                  !_isAwaitingTap)
                               ? _prepareNewCard
                               : null,
                           child: const Text('Karte vorbereiten'),
@@ -1285,10 +1201,10 @@ class _CircleGameScreenState extends State<CircleGameScreen>
                       const SizedBox(width: 8),
                       Expanded(
                         child: ElevatedButton(
-                          onPressed:
-                              (_currentCard != null && !_isAwaitingTap)
-                                  ? _endTurnAndNextPlayer
-                                  : null,
+                          onPressed: (_currentCard != null &&
+                                  !_isAwaitingTap)
+                              ? _endTurnAndNextPlayer
+                              : null,
                           child: const Text(
                             'Zug beenden / Nächster Spieler',
                             textAlign: TextAlign.center,
@@ -1306,6 +1222,7 @@ class _CircleGameScreenState extends State<CircleGameScreen>
     );
   }
 }
+
 
 /// dekorativer Kartenring (Rückseiten)
 class _CardRing extends StatelessWidget {
